@@ -1,0 +1,7 @@
+port: 2037
+name: Bolina
+media_path: ../share/media/
+export_path: ../share/export/
+
+grid:
+  tile_size: 500

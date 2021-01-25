@@ -2,11 +2,13 @@ package constants
 
 import (
 	"github.com/tdewolff/canvas"
+	"github.com/tdewolff/canvas/font"
 	"gorfe/utils"
 )
 
 var Poppins *canvas.FontFamily
 var PoppinsSemiBold *canvas.FontFamily
+var PoppinsSecond font.Font
 
 func LoadFonts() {
 	var err error

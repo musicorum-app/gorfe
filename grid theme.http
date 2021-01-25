@@ -1,0 +1,32 @@
+POST http://localhost:2037/generate
+Content-Type: application/json
+
+{
+  "id": "UMKp4hQJTVaEet2pWaHwUqGtBHKSogAyCdCvjqayTH94xj",
+  "user": {
+    "username": "metye",
+    "name": "matheus",
+    "scrobbles": 22193
+  },
+  "theme": "grid",
+  "story": false,
+  "hide_username": false,
+  "data": {
+    "rows": 1,
+    "columns": 2,
+    "show_names": true,
+    "show_playcount": true,
+    "tiles": [
+      {
+        "image": "https://i.scdn.co/image/ab67616d0000b2736040effba89b9b00a6f6743a",
+        "name": "Replay",
+        "sub": "Lady Gaga"
+      },
+      {
+        "image": "https://i.scdn.co/image/ab67616d0000b2733899712512f50a8d9e01e951",
+        "name": "Play Date",
+        "sub": "Melanie Martinez"
+      }
+    ]
+  }
+}

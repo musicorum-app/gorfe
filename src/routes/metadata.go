@@ -2,18 +2,17 @@ package routes
 
 import (
 	"encoding/json"
-	"fmt"
 	"gorfe/constants"
 	"gorfe/utils"
 	"net/http"
 )
 
 type MetadataRouteResponse struct {
-	name string `json:"name"`
-	engine string `json:"engine"`
-	version float32 `json:"version"`
-	scheme float32 `json:"scheme"`
-	themes []string `json:"themes"`
+	name    string   `json:"name"`
+	engine  string   `json:"engine"`
+	version float32  `json:"version"`
+	scheme  float32  `json:"scheme"`
+	themes  []string `json:"themes"`
 }
 
 var config utils.ConfigFile
@@ -33,7 +32,5 @@ func MetadataRoute(w http.ResponseWriter, _ *http.Request) {
 		"themes":  constants.EngineThemes,
 	}
 
-	fmt.Println(response)
-	
 	json.NewEncoder(w).Encode(response)
 }

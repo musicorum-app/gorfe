@@ -1,4 +1,3 @@
-
 package utils
 
 import (
@@ -9,15 +8,15 @@ import (
 )
 
 type GridConfig struct {
-	TileSize int `yaml:"tile_size"`
+	Quality uint `yaml:"quality"`
 }
 
 type ConfigFile struct {
-	Port string `yaml:"port"`
-	Name string `yaml:"name"`
-	Grid GridConfig `yaml:"grid"`
-	MediaPath string `yaml:"media_path"`
-	ExportPath string `yaml:"export_path"`
+	Port       string     `yaml:"port"`
+	Name       string     `yaml:"name"`
+	Grid       GridConfig `yaml:"grid"`
+	MediaPath  string     `yaml:"media_path"`
+	ExportPath string     `yaml:"export_path"`
 }
 
 var Config ConfigFile

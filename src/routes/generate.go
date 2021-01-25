@@ -13,11 +13,14 @@ func GenerateRoute(w http.ResponseWriter, r *http.Request) {
 	var data structs.GenerateRequest
 	_ = json.NewDecoder(r.Body).Decode(&data)
 
+	var duration float64
+	var file string
+
 	if data.Theme == "grid" {
-		themes.GenerateGridImage(data)
+		duration, file = themes.GenerateGridImage(data)
 	}
 
-	mapIndex := map[string]string{"working": "ok"}
+	mapIndex := map[string]interface{}{"file": file, "duration": duration}
 	marshal, _ := json.Marshal(mapIndex)
 	fmt.Fprintln(w, string(marshal))
 }

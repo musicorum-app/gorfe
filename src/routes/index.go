@@ -7,7 +7,7 @@ import (
 )
 
 func IndexRoute(w http.ResponseWriter, _ *http.Request) {
-	mapIndex := map[string]string{"working": "ok"}
+	mapIndex := map[string]bool{"working": true}
 	marshal, _ := json.Marshal(mapIndex)
 	fmt.Fprintln(w, string(marshal))
 }

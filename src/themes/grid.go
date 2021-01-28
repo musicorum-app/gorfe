@@ -125,15 +125,21 @@ func GenerateGridImage(request structs.GenerateRequest) (float64, string) {
 
 	fileName := request.ID + ".webp"
 
-	webpbin.NewCWebP().
+	err := webpbin.NewCWebP().
 		Quality(config.Grid.Quality).
 		InputImage(c.Image()).
 		OutputFile(config.ExportPath + fileName).
 		Run()
 
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
 	duration := time.Since(start)
 	fmt.Printf("Duration: %s", duration)
 	fmt.Println()
+
+	fmt.Println(config.ExportPath + fileName)
 
 	return duration.Seconds(), fileName
 

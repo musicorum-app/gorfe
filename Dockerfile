@@ -6,6 +6,8 @@ RUN echo "files on /go:" && ls
 
 USER root
 
+RUN apt-get update && apt-get install -y libglu1
+
 RUN cd /go/src && go get -v && go install -v ./... && go build -o ../goapp
 RUN cd /go && ls && cd src && ls
 RUN chmod -R 777 /go

@@ -1,12 +1,13 @@
 FROM golang:alpine AS builder
-WORKDIR /src
-COPY ./src /src
-RUN cd /src && go build -o goapp
-RUN go get
+WORKDIR /build
+COPY ./ /build
+RUN mkdir /out
+RUN cd /build/src && go get && build -o /out/goapp
 
 FROM alpine
-WORKDIR /app
-COPY --from=builder /src/goapp /app
+WORKDIR /app/gorfe
+COPY --from=builder /out /app/gorfe
+COPY --from=builder /build/src/vendor /app/gorfe/vendor
 
 EXPOSE 2037
 ENTRYPOINT ./goapp

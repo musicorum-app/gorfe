@@ -7,5 +7,5 @@ FROM alpine
 WORKDIR /app
 COPY --from=builder /src/goapp /app
 
-EXPOSE 7060
+EXPOSE 2037
 ENTRYPOINT ./goapp

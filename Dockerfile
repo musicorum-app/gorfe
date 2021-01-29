@@ -16,4 +16,4 @@ RUN chmod -R 777 /home
 RUN cd /home/musicorum && ls
 
 EXPOSE 2037
-ENTRYPOINT /go/src/goapp
+ENTRYPOINT /go/goapp

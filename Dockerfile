@@ -1,7 +1,7 @@
 FROM golang:alpine AS builder
 
-WORKDIR /go/src
-ADD . /go/src
+WORKDIR /go
+ADD . /go
 
 RUN cd /go/src && go get -v && go install -v ./... && go build -o goapp
 

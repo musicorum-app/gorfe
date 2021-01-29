@@ -1,6 +1,6 @@
 FROM golang:alpine AS builder
 
-WORKDIR /go
+WORKDIR /go/app/bin
 ADD . /go
 RUN echo "files on /go:" && ls
 
@@ -19,4 +19,7 @@ RUN chmod -R 777 /home
 RUN cd /home/musicorum && ls
 
 EXPOSE 2037
+
+WORKDIR /go/app/bin
+
 ENTRYPOINT /go/app/bin/goapp

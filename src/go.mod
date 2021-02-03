@@ -6,6 +6,7 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/fogleman/gg v1.3.0
 	github.com/frankban/quicktest v1.11.3 // indirect
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/mholt/archiver v3.1.1+incompatible // indirect
@@ -17,6 +18,6 @@ require (
 	github.com/rs/cors v1.7.0
 	github.com/tdewolff/canvas v0.0.0-20201125134156-c67198494ef6
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/image v0.0.0-20200927104501-e162460cd6b5 // indirect
+	golang.org/x/image v0.0.0-20200927104501-e162460cd6b5
 	gopkg.in/yaml.v2 v2.4.0
 )

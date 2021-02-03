@@ -6,8 +6,6 @@ import (
 	"github.com/fogleman/gg"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nickalie/go-webpbin"
-	"github.com/tdewolff/canvas"
-	"gorfe/constants"
 	"image/color"
 	"sync"
 
@@ -64,6 +62,13 @@ func GenerateGridImage(request structs.GenerateRequest) (float64, string) {
 
 	c := gg.NewContext(int(width), int(height))
 
+	if themeData.ShowNames {
+		fontSize := float64(tileSize) * 0.08
+		if err := c.LoadFontFace("src/assets/fonts/Poppins-Regular.ttf", fontSize); err != nil {
+			panic(err)
+		}
+	}
+
 	//titleFace := constants.Poppins.Face(300, color.White, canvas.FontSemibold, canvas.FontNormal)
 
 	var wg sync.WaitGroup
@@ -79,43 +84,25 @@ func GenerateGridImage(request structs.GenerateRequest) (float64, string) {
 				continue
 			}
 
-			go func(curr int) {
-				defer wg.Done()
+			tile := themeData.Tiles[current]
 
-				tile := themeData.Tiles[curr]
+			image, err := media.GetImage(tile.Image)
 
-				image, err := media.GetImage(tile.Image)
+			if err != nil {
+				fmt.Println("Couldn't get image from " + themeData.Tiles[current].Image)
+			} else {
+				image = imaging.Resize(image, tileSize, tileSize, imaging.Lanczos)
+				//ctx.DrawImage(float64(x), height - float64(y) - float64(tileSize), image, 1)
+				//ctx.DrawText(float64(x+20), float64(y+20), canvas.NewTextBox(titleFace, string(current), 0, 0, canvas.Left, canvas.Top, 0, 0))
+				c.DrawImage(image, x, y)
+			}
 
-				if err != nil {
-					fmt.Println("Couldn't get image from " + themeData.Tiles[curr].Image)
-				} else {
-					image = imaging.Resize(image, tileSize, tileSize, imaging.Lanczos)
-					//ctx.DrawImage(float64(x), height - float64(y) - float64(tileSize), image, 1)
-					//ctx.DrawText(float64(x+20), float64(y+20), canvas.NewTextBox(titleFace, string(current), 0, 0, canvas.Left, canvas.Top, 0, 0))
-					c.DrawImage(image, x, y)
-				}
-
-				if themeData.ShowNames {
-					drawOverlay(c, themeData, tile, float64(x), float64(y), float64(tileSize))
-				}
-			}(current)
+			if themeData.ShowNames {
+				fmt.Println("ALO")
+				drawOverlay(c, themeData, tile, float64(x), float64(y), float64(tileSize))
+			}
 
 			current++
-		}
-	}
-
-	wg.Wait()
-
-	if themeData.ShowNames && themeData.Style == "DEFAULT" {
-		for i := 0; i < themeData.Rows; i++ {
-			y := i * tileSize
-			grad := gg.NewLinearGradient(0, float64(y), 0, float64(tileSize+y))
-			grad.AddColorStop(0, color.RGBA{A: 147})
-			grad.AddColorStop(0.5, color.RGBA{A: 0})
-
-			c.SetFillStyle(grad)
-			c.DrawRectangle(0, float64(y), float64(themeData.Columns*tileSize), float64(tileSize))
-			c.Fill()
 		}
 	}
 
@@ -151,24 +138,41 @@ func drawOverlay(
 	tile GridThemeTile,
 	x, y, tileSize float64,
 ) {
+	padding := 8.0
+
 	if themeData.Style == "DEFAULT" {
-		c := canvas.New(float64(themeData.TileSize), float64(themeData.TileSize))
-		ctx := canvas.NewContext(c)
+		//font, _ := truetype.Parse(goregular.TTF)
 
-		ctx.SetFillColor(color.RGBA{
-			R: 255,
-			G: 255,
-			B: 255,
-			A: 255,
-		})
-		titleFace := constants.Poppins.Face(300, color.White, canvas.FontSemibold, canvas.FontNormal)
+		grad := gg.NewLinearGradient(0, float64(y), 0, float64(tileSize+y))
+		grad.AddColorStop(0, color.RGBA{A: 160})
+		grad.AddColorStop(0.35, color.RGBA{A: 0})
 
-		text := canvas.NewTextBox(titleFace, "alo alo bom dia", float64(themeData.TileSize), float64(themeData.TileSize), canvas.Left, canvas.Top, 10, 0)
+		cg.SetFillStyle(grad)
+		cg.DrawRectangle(x, y, tileSize, tileSize)
+		cg.Fill()
 
-		ctx.DrawText(x, y, text)
+		cg.SetRGB(1, 1, 1)
+
+		//cg.SetFontFace(face)
+
+		fmt.Println(tile)
+
+		utils.DrawSizedString(cg, tile.Name, x+padding, y+padding, 0.0, 1.0, tileSize-(padding*2))
 
 		//im := c.Re
 		//
 		//cg.DrawImage(c, x, y)
+	} else if themeData.Style == "CAPTION" {
+		cg.SetColor(color.RGBA{A: 150})
+		height := tileSize * 0.16
+
+		topPadding := 11.0
+
+		cg.DrawRectangle(x, tileSize-height+y, tileSize, height)
+		cg.Fill()
+
+		cg.SetRGB(1, 1, 1)
+
+		utils.DrawSizedString(cg, tile.Name, x+(tileSize/2), y+tileSize-height+topPadding, 0.5, 1.0, tileSize-(padding*2))
 	}
 }

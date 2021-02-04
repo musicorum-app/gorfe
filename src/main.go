@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
-	"gorfe/constants"
 	"gorfe/routes"
 	"gorfe/themes"
 	"gorfe/utils"
@@ -13,7 +12,6 @@ import (
 
 func main() {
 	utils.SetupConfig()
-	constants.LoadFonts()
 
 	server()
 }
@@ -38,5 +36,5 @@ func server() {
 
 	handler := c.Handler(router)
 
-	log.Fatal(http.ListenAndServe(":" + config.Port, handler))
+	log.Fatal(http.ListenAndServe(":"+config.Port, handler))
 }

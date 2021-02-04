@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/disintegration/imaging v1.6.2
+	github.com/esimov/stackblur-go v1.0.0
 	github.com/fogleman/gg v1.3.0
 	github.com/frankban/quicktest v1.11.3 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
@@ -14,6 +15,7 @@ require (
 	github.com/nickalie/go-binwrapper v0.0.0-20190114141239-525121d43c84 // indirect
 	github.com/nickalie/go-webpbin v0.0.0-20170427122138-7e79cf5bb01e
 	github.com/nwaples/rardecode v1.1.0 // indirect
+	github.com/oliamb/cutter v0.2.2
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/rs/cors v1.7.0
 	github.com/tdewolff/canvas v0.0.0-20201125134156-c67198494ef6

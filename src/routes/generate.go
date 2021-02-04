@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"gorfe/structs"
 	"gorfe/themes"
+	"gorfe/utils"
 	"net/http"
 )
 
 func GenerateRoute(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	config := utils.GetConfig()
 	var data structs.GenerateRequest
 	_ = json.NewDecoder(r.Body).Decode(&data)
 
@@ -19,6 +20,14 @@ func GenerateRoute(w http.ResponseWriter, r *http.Request) {
 	if data.Theme == "grid" {
 		duration, file = themes.GenerateGridImage(data)
 	}
+
+	if data.ReturnImage {
+		w.Header().Set("Content-Type", "image/webp")
+		http.ServeFile(w, r, config.ExportPath+file)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 
 	mapIndex := map[string]interface{}{"file": file, "duration": duration}
 	marshal, _ := json.Marshal(mapIndex)

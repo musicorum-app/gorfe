@@ -3,9 +3,12 @@ package themes
 import (
 	"fmt"
 	"github.com/disintegration/imaging"
+	"github.com/esimov/stackblur-go"
 	"github.com/fogleman/gg"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nickalie/go-webpbin"
+	"github.com/oliamb/cutter"
+	"gorfe/constants"
 	"image/color"
 	"sync"
 
@@ -52,24 +55,8 @@ func GenerateGridImage(request structs.GenerateRequest) (float64, string) {
 	fmt.Println(themeData.TileSize, themeData.Columns)
 
 	width, height := float64(themeData.Columns*tileSize), float64(themeData.Rows*tileSize)
-	//
-	//c := canvas.New(width, height)
-	//ctx := canvas.NewContext(c)
-	//
-	//ctx.SetFillColor(color.RGBA{255, 100, 0, 100})
-	//ctx.DrawPath(0, 0, canvas.Rectangle(width, height))
-	//ctx.SetFillColor(canvas.White)
 
 	c := gg.NewContext(int(width), int(height))
-
-	if themeData.ShowNames {
-		fontSize := float64(tileSize) * 0.08
-		if err := c.LoadFontFace("src/assets/fonts/Poppins-Regular.ttf", fontSize); err != nil {
-			panic(err)
-		}
-	}
-
-	//titleFace := constants.Poppins.Face(300, color.White, canvas.FontSemibold, canvas.FontNormal)
 
 	var wg sync.WaitGroup
 	wg.Add(len(themeData.Tiles))
@@ -91,17 +78,30 @@ func GenerateGridImage(request structs.GenerateRequest) (float64, string) {
 			if err != nil {
 				fmt.Println("Couldn't get image from " + themeData.Tiles[current].Image)
 			} else {
-				image = imaging.Resize(image, tileSize, tileSize, imaging.Lanczos)
-				//ctx.DrawImage(float64(x), height - float64(y) - float64(tileSize), image, 1)
-				//ctx.DrawText(float64(x+20), float64(y+20), canvas.NewTextBox(titleFace, string(current), 0, 0, canvas.Left, canvas.Top, 0, 0))
-				c.DrawImage(image, x, y)
+				if image.Bounds().Dx() == image.Bounds().Dy() {
+					image = imaging.Resize(image, tileSize, tileSize, imaging.Lanczos)
+					c.DrawImage(image, x, y)
+				} else {
+					fmt.Println(image.Bounds().Dx())
+
+					cropped, _ := cutter.Crop(image, cutter.Config{
+						Width:   1,
+						Height:  1,
+						Mode:    cutter.Centered,
+						Options: cutter.Ratio,
+					})
+
+					fmt.Println(cropped.Bounds())
+
+					image = imaging.Resize(cropped, tileSize, tileSize, imaging.Lanczos)
+
+					c.DrawImage(image, x, y)
+				}
 			}
 
 			if themeData.ShowNames {
-				fmt.Println("ALO")
 				drawOverlay(c, themeData, tile, float64(x), float64(y), float64(tileSize))
 			}
-
 			current++
 		}
 	}
@@ -138,14 +138,19 @@ func drawOverlay(
 	tile GridThemeTile,
 	x, y, tileSize float64,
 ) {
-	padding := 8.0
+	padding := tileSize * 0.03
+	fontSize := tileSize * 0.07
+	fontSizeSecondary := tileSize * 0.055
+
+	fontSizeSecondaryGap := tileSize * 0.086
 
 	if themeData.Style == "DEFAULT" {
 		//font, _ := truetype.Parse(goregular.TTF)
 
 		grad := gg.NewLinearGradient(0, float64(y), 0, float64(tileSize+y))
-		grad.AddColorStop(0, color.RGBA{A: 160})
-		grad.AddColorStop(0.35, color.RGBA{A: 0})
+		grad.AddColorStop(0, color.RGBA{A: 130})
+		grad.AddColorStop(0.26, color.RGBA{A: 30})
+		grad.AddColorStop(0.38, color.RGBA{A: 0})
 
 		cg.SetFillStyle(grad)
 		cg.DrawRectangle(x, y, tileSize, tileSize)
@@ -153,26 +158,87 @@ func drawOverlay(
 
 		cg.SetRGB(1, 1, 1)
 
-		//cg.SetFontFace(face)
+		utils.SetFontFace(cg, constants.PoppinsSemiBold, fontSize)
 
-		fmt.Println(tile)
+		utils.DrawTextWithEllipsis(cg, tile.Name, x+padding, y+padding, 0.0, 1.0, tileSize-(padding*2))
 
-		utils.DrawSizedString(cg, tile.Name, x+padding, y+padding, 0.0, 1.0, tileSize-(padding*2))
+		if tile.Secondary != nil {
+			utils.SetFontFace(cg, constants.PoppinsRegular, fontSizeSecondary)
+			utils.DrawTextWithEllipsis(cg, *tile.Secondary, x+padding, y+padding+fontSizeSecondaryGap, 0.0, 1.0, tileSize-(padding*2))
+		}
 
-		//im := c.Re
-		//
-		//cg.DrawImage(c, x, y)
 	} else if themeData.Style == "CAPTION" {
-		cg.SetColor(color.RGBA{A: 150})
-		height := tileSize * 0.16
-
-		topPadding := 11.0
+		cg.SetColor(color.RGBA{A: 110})
+		height := tileSize * 0.18
 
 		cg.DrawRectangle(x, tileSize-height+y, tileSize, height)
 		cg.Fill()
 
 		cg.SetRGB(1, 1, 1)
 
-		utils.DrawSizedString(cg, tile.Name, x+(tileSize/2), y+tileSize-height+topPadding, 0.5, 1.0, tileSize-(padding*2))
+		utils.SetFontFace(cg, constants.PoppinsSemiBold, fontSize)
+
+		if tile.Secondary != nil {
+			textsSize := fontSize + fontSizeSecondary
+
+			textsY := y + tileSize - height + ((height - textsSize) / 2)
+			textY := textsY
+			secondaryY := textsY + ((textsSize / 3) * 2)
+
+			utils.DrawTextWithEllipsis(cg, tile.Name, x+(tileSize/2), textY, 0.5, 1.0, tileSize-(padding*2))
+
+			utils.SetFontFace(cg, constants.PoppinsRegular, fontSizeSecondary)
+			utils.DrawTextWithEllipsis(cg, *tile.Secondary, x+(tileSize/2), secondaryY, 0.5, 1.0, tileSize-(padding*2))
+		} else {
+			utils.DrawTextWithEllipsis(cg, tile.Name, x+(tileSize/2), y+tileSize-(height/2), 0.5, 0.5, tileSize-(padding*2))
+		}
+
+	} else if themeData.Style == "SHADOW" {
+		intTileSize := int(tileSize)
+
+		tg := gg.NewContext(intTileSize, intTileSize)
+
+		tg.SetRGB(0, 0, 0)
+
+		spread := 1
+		spreads := 1
+		spreadPoint := float64(spread) / float64(spreads)
+
+		utils.SetFontFace(tg, constants.PoppinsSemiBold, fontSize)
+		for i := 0; i <= spreads; i++ {
+			for j := 0; j <= spreads; j++ {
+				sideX := (padding - float64(spread)) + (spreadPoint * float64(i))
+				sideY := (padding - float64(spread)) + (spreadPoint * float64(i))
+				utils.DrawTextWithEllipsis(tg, tile.Name, sideX, sideY, 0.0, 1.0, tileSize-(padding*2))
+			}
+		}
+
+		if tile.Secondary != nil {
+			utils.SetFontFace(tg, constants.PoppinsRegular, fontSizeSecondary)
+			for i := 0; i <= spreads; i++ {
+				for j := 0; j <= spreads; j++ {
+					sideX := (padding - float64(spread)) + (spreadPoint * float64(i))
+					sideY := (padding + fontSizeSecondaryGap - float64(spread)) + (spreadPoint * float64(i))
+					utils.DrawTextWithEllipsis(tg, *tile.Secondary, sideX, sideY, 0.0, 1.0, tileSize-(padding*2))
+				}
+			}
+		}
+
+		radius := 12
+		var done = make(chan struct{}, radius)
+		im := stackblur.Process(tg.Image(), uint32(intTileSize), uint32(intTileSize), uint32(radius), done)
+		<-done
+
+		cg.DrawImage(im, int(x), int(y))
+
+		cg.SetRGB(1, 1, 1)
+
+		utils.SetFontFace(cg, constants.PoppinsSemiBold, fontSize)
+		utils.DrawTextWithEllipsis(cg, tile.Name, x+padding, y+padding, 0.0, 1.0, tileSize-(padding*2))
+
+		if tile.Secondary != nil {
+			utils.SetFontFace(cg, constants.PoppinsRegular, fontSizeSecondary)
+			utils.DrawTextWithEllipsis(cg, *tile.Secondary, x+padding, y+padding+fontSizeSecondaryGap, 0.0, 1.0, tileSize-(padding*2))
+		}
 	}
 }

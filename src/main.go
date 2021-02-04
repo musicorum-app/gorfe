@@ -1,13 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
+	"gorfe/constants"
 	"gorfe/routes"
 	"gorfe/themes"
 	"gorfe/utils"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 func main() {
@@ -18,6 +21,7 @@ func main() {
 
 func server() {
 	config := utils.GetConfig()
+	fmt.Println("Starting gorfe engine version " + strconv.FormatInt(constants.EngineVersion, 0))
 	log.Println("Starting web server on port " + config.Port + "...")
 
 	routes.InitializeMetadataRoute()

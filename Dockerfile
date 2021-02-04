@@ -21,5 +21,6 @@ RUN cd /home/musicorum && ls
 EXPOSE 2037
 
 WORKDIR /go/app/bin
+ADD . /go/app/bin
 
 ENTRYPOINT /go/app/bin/goapp

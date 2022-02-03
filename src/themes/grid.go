@@ -83,11 +83,7 @@ func GenerateGridImage(request structs.GenerateRequest, span *sentry.Span) (floa
 				"image":     tile.Image,
 			}
 
-			imageSpan := tileSpan.StartChild("image.handle")
-
 			image, err := media.GetImage(tile.Image)
-
-			imageSpan.Finish()
 
 			if err != nil {
 				fmt.Println("Couldn't get image from " + themeData.Tiles[current].Image)

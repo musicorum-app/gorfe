@@ -2,7 +2,7 @@ FROM golang:latest
 
 USER root
 RUN apt-get update && \
-  apt-get install --no-install-recommends -y libwebp-dev libwebp
+  apt-get install --no-install-recommends -y libwebp-dev
 
 WORKDIR /go/app/bin
 ADD . /go

@@ -1,16 +1,21 @@
 FROM golang:latest
 
+USER root
+WORKDIR /usr/local/webp
+RUN wget https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.0.0.tar.gz \
+      && tar -xvzf libwebp-1.0.0.tar.gz \
+      && mv libwebp-1.0.0 libwebp && \
+      rm libwebp-1.0.0.tar.gz && \
+      cd libwebp && \
+      ./configure --enable-everything && \
+      make && \
+      make install && \
+      cd .. && \
+      rm -rf libwebp
+
 WORKDIR /go/app/bin
 ADD . /go
 RUN echo "files on /go:" && ls
-
-USER root
-
-RUN apk add --no-cache \
-        freetype-dev \
-        libjpeg-turbo-dev \
-        libwebp-dev \
-        libpng-dev
 
 RUN mkdir -p /go/app/bin
 RUN cd /go/src && go get -v && go install -v ./... && go build -o /go/app/bin/goapp

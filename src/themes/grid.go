@@ -8,6 +8,9 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/mitchellh/mapstructure"
 	"github.com/oliamb/cutter"
+	"gorfe/media"
+	"image"
+
 	//"github.com/pixiv/go-libjpeg/jpeg"
 	"gorfe/constants"
 	"image/color"
@@ -18,7 +21,6 @@ import (
 	//"image/color"
 	"os"
 
-	"gorfe/media"
 	"gorfe/structs"
 	"gorfe/utils"
 	//"image/color"
@@ -39,6 +41,11 @@ type GridThemeData struct {
 	ShowNames     bool            `mapstructure:"show_names"`
 	ShowPlaycount bool            `mapstructure:"show_playcount"`
 	Style         string          `json:"style"`
+}
+
+type ImageChunk struct {
+	Image    image.Image
+	Position int
 }
 
 var config utils.ConfigFile
@@ -64,61 +71,90 @@ func GenerateGridImage(request structs.GenerateRequest, span *sentry.Span) (floa
 	c := gg.NewContext(int(width), int(height))
 
 	var wg sync.WaitGroup
-	wg.Add(len(themeData.Tiles))
+	var chunks []ImageChunk
+	wg.Add(themeData.Rows)
 
-	current := 0
-	for i := 0; i < themeData.Rows; i++ {
-		for j := 0; j < themeData.Columns; j++ {
-			x := j * tileSize
-			y := i * tileSize
+	for _i := 0; _i < themeData.Rows; _i++ {
 
-			if current >= len(themeData.Tiles) {
-				continue
-			}
+		go func(i int) {
+			current := i * themeData.Columns
+			rowSpan := renderSpan.StartChild("row")
+			rc := gg.NewContext(int(width), int(tileSize))
+			defer wg.Done()
+			for j := 0; j < themeData.Columns; j++ {
+				x := j * tileSize
+				y := 0
 
-			tile := themeData.Tiles[current]
-
-			tileSpan := renderSpan.StartChild("tile.render")
-			tileSpan.Description = fmt.Sprintf("Tile: %s", tile.Name)
-			tileSpan.Data = map[string]interface{}{
-				"name":      tile.Name,
-				"secondary": tile.Secondary,
-				"image":     tile.Image,
-			}
-
-			image, err := media.GetImage(tile.Image)
-
-			if err != nil {
-				fmt.Println("Couldn't get image from " + themeData.Tiles[current].Image)
-			} else {
-				if image.Bounds().Dx() == image.Bounds().Dy() {
-					image = imaging.Resize(image, tileSize, tileSize, imaging.Lanczos)
-					c.DrawImage(image, x, y)
-				} else {
-					fmt.Println(image.Bounds().Dx())
-
-					cropped, _ := cutter.Crop(image, cutter.Config{
-						Width:   1,
-						Height:  1,
-						Mode:    cutter.Centered,
-						Options: cutter.Ratio,
-					})
-
-					fmt.Println(cropped.Bounds())
-
-					image = imaging.Resize(cropped, tileSize, tileSize, imaging.Lanczos)
-
-					c.DrawImage(image, x, y)
+				if current >= len(themeData.Tiles) {
+					continue
 				}
-			}
 
-			if themeData.ShowNames {
-				drawOverlay(c, themeData, tile, float64(x), float64(y), float64(tileSize))
+				tile := themeData.Tiles[current]
+
+				tileSpan := rowSpan.StartChild("tile.render")
+				tileSpan.Description = fmt.Sprintf("Tile: %s", tile.Name)
+				tileSpan.Data = map[string]interface{}{
+					"name":      tile.Name,
+					"secondary": tile.Secondary,
+					"image":     tile.Image,
+				}
+
+				image, err := media.GetImage(tile.Image)
+
+				if err != nil {
+					fmt.Println("Couldn't get image from " + themeData.Tiles[current].Image)
+				} else {
+					if image.Bounds().Dx() == image.Bounds().Dy() {
+						image = imaging.Resize(image, tileSize, tileSize, imaging.Lanczos)
+						rc.DrawImage(image, x, y)
+					} else {
+						fmt.Println(image.Bounds().Dx())
+
+						cropped, _ := cutter.Crop(image, cutter.Config{
+							Width:   1,
+							Height:  1,
+							Mode:    cutter.Centered,
+							Options: cutter.Ratio,
+						})
+
+						fmt.Println(cropped.Bounds())
+
+						image = imaging.Resize(cropped, tileSize, tileSize, imaging.Lanczos)
+
+						rc.DrawImage(image, x, y)
+					}
+				}
+
+				if themeData.ShowNames {
+					drawOverlay(rc, themeData, tile, float64(x), float64(y), float64(tileSize))
+				}
+				tileSpan.Finish()
+
+				current++
 			}
-			tileSpan.Finish()
-			current++
-		}
+			chunks = append(chunks, ImageChunk{
+				Image:    rc.Image(),
+				Position: i,
+			})
+			rowSpan.Finish()
+		}(_i)
+
 	}
+
+	wg.Wait()
+
+	fmt.Println("tiles done")
+
+	compositionSpan := span.StartChild("composition")
+
+	fmt.Printf("chunk %s", len(chunks))
+	for i := 0; i < len(chunks); i++ {
+		fmt.Println(chunks[i].Position * tileSize)
+		c.DrawImage(chunks[i].Image, 0, chunks[i].Position*tileSize)
+	}
+
+	fmt.Println("compose done")
+	compositionSpan.Finish()
 
 	if _, err := os.Stat(config.ExportPath); os.IsNotExist(err) {
 		fmt.Println("Export path does not exist!")

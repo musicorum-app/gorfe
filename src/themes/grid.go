@@ -78,6 +78,8 @@ func GenerateGridImage(request structs.GenerateRequest, span *sentry.Span) (floa
 		go func(i int) {
 			current := i * themeData.Columns
 			rowSpan := renderSpan.StartChild("row")
+
+			tilesSpan := renderSpan.StartChild("row.tiles")
 			rc := gg.NewContext(int(width), int(tileSize))
 			defer wg.Done()
 			for j := 0; j < themeData.Columns; j++ {
@@ -90,7 +92,7 @@ func GenerateGridImage(request structs.GenerateRequest, span *sentry.Span) (floa
 
 				tile := themeData.Tiles[current]
 
-				tileSpan := rowSpan.StartChild("tile.render")
+				tileSpan := tilesSpan.StartChild("tile.render")
 				tileSpan.Description = fmt.Sprintf("Tile: %s", tile.Name)
 				tileSpan.Data = map[string]interface{}{
 					"name":      tile.Name,
@@ -131,6 +133,7 @@ func GenerateGridImage(request structs.GenerateRequest, span *sentry.Span) (floa
 
 				current++
 			}
+			tilesSpan.Finish()
 			compositionSpan := rowSpan.StartChild("composition")
 			c.DrawImage(rc.Image(), 0, i*tileSize)
 			compositionSpan.Finish()

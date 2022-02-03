@@ -79,7 +79,7 @@ func GenerateGridImage(request structs.GenerateRequest, span *sentry.Span) (floa
 			current := i * themeData.Columns
 			rowSpan := renderSpan.StartChild("row")
 
-			tilesSpan := renderSpan.StartChild("row.tiles")
+			tilesSpan := rowSpan.StartChild("row.tiles")
 			rc := gg.NewContext(int(width), int(tileSize))
 			defer wg.Done()
 			for j := 0; j < themeData.Columns; j++ {

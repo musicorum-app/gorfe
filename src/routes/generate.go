@@ -18,6 +18,7 @@ func GenerateRoute(w http.ResponseWriter, r *http.Request) {
 	//sentryTraceId := r.Header.Get("sentry-trace")
 
 	span := sentry.StartSpan(r.Context(), "generation", sentry.ContinueFromRequest(r))
+	sentry.TransactionName("Gorfe generation")
 
 	fmt.Println(span.TraceID)
 

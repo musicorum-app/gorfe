@@ -71,7 +71,6 @@ func GenerateGridImage(request structs.GenerateRequest, span *sentry.Span) (floa
 	c := gg.NewContext(int(width), int(height))
 
 	var wg sync.WaitGroup
-	var chunks []ImageChunk
 	wg.Add(themeData.Rows)
 
 	for _i := 0; _i < themeData.Rows; _i++ {
@@ -132,10 +131,10 @@ func GenerateGridImage(request structs.GenerateRequest, span *sentry.Span) (floa
 
 				current++
 			}
-			chunks = append(chunks, ImageChunk{
-				Image:    rc.Image(),
-				Position: i,
-			})
+			compositionSpan := rowSpan.StartChild("composition")
+			c.DrawImage(rc.Image(), 0, i*tileSize)
+			compositionSpan.Finish()
+
 			rowSpan.Finish()
 		}(_i)
 
@@ -144,17 +143,6 @@ func GenerateGridImage(request structs.GenerateRequest, span *sentry.Span) (floa
 	wg.Wait()
 
 	fmt.Println("tiles done")
-
-	compositionSpan := span.StartChild("composition")
-
-	fmt.Printf("chunk %s", len(chunks))
-	for i := 0; i < len(chunks); i++ {
-		fmt.Println(chunks[i].Position * tileSize)
-		c.DrawImage(chunks[i].Image, 0, chunks[i].Position*tileSize)
-	}
-
-	fmt.Println("compose done")
-	compositionSpan.Finish()
 
 	if _, err := os.Stat(config.ExportPath); os.IsNotExist(err) {
 		fmt.Println("Export path does not exist!")

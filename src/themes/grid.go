@@ -145,7 +145,7 @@ func GenerateGridImage(request structs.GenerateRequest, span *sentry.Span) (floa
 	//	fmt.Println(err.Error())
 	//}
 
-	if err = jpeg.Encode(output, c.Image(), nil); err != nil {
+	if err = jpeg.Encode(output, c.Image(), &jpeg.Options{Quality: 60}); err != nil {
 		log.Printf("failed to encode: %v", err)
 	}
 

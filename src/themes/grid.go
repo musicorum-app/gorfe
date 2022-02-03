@@ -5,8 +5,9 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/esimov/stackblur-go"
 	"github.com/fogleman/gg"
+	"github.com/kolesa-team/go-webp/encoder"
+	"github.com/kolesa-team/go-webp/webp"
 	"github.com/mitchellh/mapstructure"
-	"github.com/nickalie/go-webpbin"
 	"github.com/oliamb/cutter"
 	"gorfe/constants"
 	"image/color"
@@ -112,13 +113,18 @@ func GenerateGridImage(request structs.GenerateRequest) (float64, string) {
 
 	fileName := request.ID + ".webp"
 
-	err := webpbin.NewCWebP().
-		Quality(config.Grid.Quality).
-		InputImage(c.Image()).
-		OutputFile(config.ExportPath + fileName).
-		Run()
-
+	output, err := os.Create(config.ExportPath + fileName)
 	if err != nil {
+		fmt.Println(err.Error())
+	}
+	defer output.Close()
+
+	options, err := encoder.NewLossyEncoderOptions(encoder.PresetDefault, float32(config.Grid.Quality))
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	if err := webp.Encode(output, c.Image(), options); err != nil {
 		fmt.Println(err.Error())
 	}
 

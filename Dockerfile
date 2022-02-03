@@ -1,17 +1,11 @@
 FROM golang:latest
 
 USER root
-WORKDIR /usr/local/webp
-RUN wget https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.0.0.tar.gz \
-      && tar -xvzf libwebp-1.0.0.tar.gz \
-      && mv libwebp-1.0.0 libwebp && \
-      rm libwebp-1.0.0.tar.gz && \
-      cd libwebp && \
-      ./configure --enable-everything && \
-      make && \
-      make install && \
-      cd .. && \
-      rm -rf libwebp
+RUN apt-get update && \
+  apt-get install --no-install-recommends -y \
+  ca-certificates \
+  automake build-essential curl \
+  libwebp-dev libwebp
 
 WORKDIR /go/app/bin
 ADD . /go

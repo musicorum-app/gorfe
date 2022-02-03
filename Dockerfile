@@ -2,10 +2,7 @@ FROM golang:latest
 
 USER root
 RUN apt-get update && \
-  apt-get install --no-install-recommends -y \
-  ca-certificates \
-  automake build-essential curl \
-  libwebp-dev libwebp
+  apt-get install --no-install-recommends -y libwebp-dev libwebp
 
 WORKDIR /go/app/bin
 ADD . /go

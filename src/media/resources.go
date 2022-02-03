@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-func GetImage (url string) (image.Image, error) {
+func GetImage(url string) (image.Image, error) {
 	file := utils.Hash(url) + ".jpg"
 	path := utils.Config.MediaPath + file
 

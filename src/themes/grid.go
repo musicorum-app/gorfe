@@ -5,6 +5,7 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/esimov/stackblur-go"
 	"github.com/fogleman/gg"
+	"github.com/getsentry/sentry-go"
 	"github.com/kolesa-team/go-webp/encoder"
 	"github.com/kolesa-team/go-webp/webp"
 	"github.com/mitchellh/mapstructure"
@@ -45,7 +46,7 @@ func InitializeGridTheme() {
 	config = utils.GetConfig()
 }
 
-func GenerateGridImage(request structs.GenerateRequest) (float64, string) {
+func GenerateGridImage(request structs.GenerateRequest, span *sentry.Span) (float64, string) {
 	start := time.Now()
 	var themeData GridThemeData
 
@@ -65,7 +66,7 @@ func GenerateGridImage(request structs.GenerateRequest) (float64, string) {
 	current := 0
 	for i := 0; i < themeData.Rows; i++ {
 		for j := 0; j < themeData.Columns; j++ {
-			x := j * tileSize
+			x := j * tileSize * 2
 			y := i * tileSize
 
 			if current >= len(themeData.Tiles) {
@@ -74,7 +75,19 @@ func GenerateGridImage(request structs.GenerateRequest) (float64, string) {
 
 			tile := themeData.Tiles[current]
 
+			tileSpan := span.StartChild("tile.render")
+			tileSpan.Description = fmt.Sprintf("Tile: %s", tile.Name)
+			tileSpan.Data = map[string]interface{}{
+				"name":      tile.Name,
+				"secondary": tile.Secondary,
+				"image":     tile.Image,
+			}
+
+			imageSpan := tileSpan.StartChild("image.handle")
+
 			image, err := media.GetImage(tile.Image)
+
+			imageSpan.Finish()
 
 			if err != nil {
 				fmt.Println("Couldn't get image from " + themeData.Tiles[current].Image)
@@ -103,6 +116,7 @@ func GenerateGridImage(request structs.GenerateRequest) (float64, string) {
 			if themeData.ShowNames {
 				drawOverlay(c, themeData, tile, float64(x), float64(y), float64(tileSize))
 			}
+			tileSpan.Finish()
 			current++
 		}
 	}
@@ -124,9 +138,13 @@ func GenerateGridImage(request structs.GenerateRequest) (float64, string) {
 		fmt.Println(err.Error())
 	}
 
+	compressionSpan := span.StartChild("compression")
+
 	if err := webp.Encode(output, c.Image(), options); err != nil {
 		fmt.Println(err.Error())
 	}
+
+	compressionSpan.Finish()
 
 	duration := time.Since(start)
 	fmt.Printf("Duration: %s", duration)

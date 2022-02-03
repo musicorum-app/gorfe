@@ -6,6 +6,12 @@ RUN echo "files on /go:" && ls
 
 USER root
 
+RUN apk add --no-cache \
+        freetype-dev \
+        libjpeg-turbo-dev \
+        libwebp-dev \
+        libpng-dev
+
 RUN mkdir -p /go/app/bin
 RUN cd /go/src && go get -v && go install -v ./... && go build -o /go/app/bin/goapp
 RUN cd /go && ls && cd src && ls

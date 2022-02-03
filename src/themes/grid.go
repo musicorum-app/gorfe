@@ -6,12 +6,13 @@ import (
 	"github.com/esimov/stackblur-go"
 	"github.com/fogleman/gg"
 	"github.com/getsentry/sentry-go"
-	"github.com/kolesa-team/go-webp/encoder"
-	"github.com/kolesa-team/go-webp/webp"
 	"github.com/mitchellh/mapstructure"
 	"github.com/oliamb/cutter"
+	//"github.com/pixiv/go-libjpeg/jpeg"
 	"gorfe/constants"
 	"image/color"
+	"image/jpeg"
+	"log"
 	"sync"
 
 	//"image/color"
@@ -50,6 +51,8 @@ func GenerateGridImage(request structs.GenerateRequest, span *sentry.Span) (floa
 	start := time.Now()
 	var themeData GridThemeData
 
+	renderSpan := span.StartChild("rendering")
+
 	mapstructure.Decode(request.Data, &themeData)
 
 	tileSize := themeData.TileSize
@@ -66,7 +69,7 @@ func GenerateGridImage(request structs.GenerateRequest, span *sentry.Span) (floa
 	current := 0
 	for i := 0; i < themeData.Rows; i++ {
 		for j := 0; j < themeData.Columns; j++ {
-			x := j * tileSize * 2
+			x := j * tileSize
 			y := i * tileSize
 
 			if current >= len(themeData.Tiles) {
@@ -75,7 +78,7 @@ func GenerateGridImage(request structs.GenerateRequest, span *sentry.Span) (floa
 
 			tile := themeData.Tiles[current]
 
-			tileSpan := span.StartChild("tile.render")
+			tileSpan := renderSpan.StartChild("tile.render")
 			tileSpan.Description = fmt.Sprintf("Tile: %s", tile.Name)
 			tileSpan.Data = map[string]interface{}{
 				"name":      tile.Name,
@@ -129,15 +132,21 @@ func GenerateGridImage(request structs.GenerateRequest, span *sentry.Span) (floa
 	}
 	defer output.Close()
 
-	options, err := encoder.NewLossyEncoderOptions(encoder.PresetDefault, float32(config.Grid.Quality))
+	//options, err := encoder.NewLossyEncoderOptions(encoder.PresetDefault, float32(config.Grid.Quality))
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
-	compressionSpan := span.StartChild("compression")
+	renderSpan.Finish()
 
-	if err := webp.Encode(output, c.Image(), options); err != nil {
-		fmt.Println(err.Error())
+	compressionSpan := span.StartChild("encoding")
+
+	//if err := webp.Encode(output, c.Image(), options); err != nil {
+	//	fmt.Println(err.Error())
+	//}
+
+	if err = jpeg.Encode(output, c.Image(), nil); err != nil {
+		log.Printf("failed to encode: %v", err)
 	}
 
 	compressionSpan.Finish()
